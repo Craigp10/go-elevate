@@ -1,13 +1,10 @@
 package main
 
 func main() {
-	goElevate()
-}
+	ele := Elevator{
+		Route: []int{1, 3, 5, 6, 1},
+		Floor: 0,
+	}
 
-type Config struct {
-	ElevatorsCount int
-}
-
-func goElevate() {
-
+	ele.Move()
 }
