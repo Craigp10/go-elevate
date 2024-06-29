@@ -10,21 +10,22 @@ func main() {
 
 	// ele.Move()
 
-	sch := Scheduler{
-		Elevators: RegisterElevators(2),
-		Floors:    10,
-		Queue:     make(chan Request),
-	}
+	sch := New(10, 2)
 
-	// sch.Queue <- 4
-	// sch.Queue <- 3
-	// sch.Queue <- 2
-	// sch.Queue <- 6
-	// sch.Queue <- 8
-	// sch.Queue <- 5
-	// sch.Queue <- 10
 	go sch.Run()
 
+	for i := 0; i < 10; i++ {
+		if i == 4 {
+			continue
+		}
+		req := Request{
+			Origin:      i + 1,
+			Destination: 10 - i - 1,
+		}
+		sch.Queue <- req
+		time.Sleep(2 * time.Second)
+
+	}
 	time.Sleep(20 * time.Second)
 }
 

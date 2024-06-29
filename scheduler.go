@@ -11,23 +11,38 @@ type Request struct {
 	Destination int
 }
 
+// If we want to extend a scheduler to handle multiple floors, consider mutex's around these queues
 type Scheduler struct {
 	Queue           chan Request
 	Elevators       map[int]Elevator
 	Floors          int
 	ActiveQueue     []Request
 	ActiveElevators chan int // elevator id
+	MovingElevator  chan int // size 1
 }
 
 func (s *Scheduler) Run() {
 	for {
 		select {
 		case req := <-s.Queue:
+			fmt.Println("New to queue")
 			s.ActiveQueue = append(s.ActiveQueue, req)
-		case freeElevator := <-s.ActiveElevators:
+
+			for i := 0; i < len(s.Elevators); i++ {
+				if s.Elevators[i].Busy {
+					continue
+				}
+				// else
+				// How can we check for non working elevators without having race conditions with below?
+				// We could lock the resource? Would need to look more into it.
+				// Probably exclude a check here...
+			}
+
+		case freeElevator := <-s.ActiveElevators: // Busy elevators 'check in'
+			fmt.Println("freeElevator", freeElevator, s.ActiveQueue)
 			cur := s.Elevators[freeElevator]
 			cur.Busy = true
-			// Take top 5 of the queue...
+			// Take top 3 of the queue...
 			i := 0
 			var routeR []Request
 			if len(s.ActiveQueue) <= 3 {
