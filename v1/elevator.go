@@ -29,7 +29,7 @@ func (e *Elevator) Go(toFloor int) {
 }
 
 func Run(args ...interface{}) {
-	// Assert our arguments as the version inputs
+	// Assert our arguments as the correct inputs
 	// inputs := args.(Inputs)
 	elevatorFloor, err1 := strconv.Atoi(args[0].(string))
 	toFloor, err2 := strconv.Atoi(args[1].(string))

@@ -4,6 +4,3 @@ This version of solving the problem is focused on the elevator. The base of the 
 
 ### Elevator
 
-type Elevator struct {
-
-}
