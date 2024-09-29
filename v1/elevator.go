@@ -24,7 +24,7 @@ func (e *Elevator) Go(toFloor int) {
 		time.Sleep(1 * time.Second)
 		i++
 	}
-
+	e.Floor = toFloor
 	fmt.Println("Elevator has Reached floor!")
 }
 

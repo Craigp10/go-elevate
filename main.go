@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	v1 "go-elevate/v1"
+	v2 "go-elevate/v2"
 	"os"
 )
 
@@ -36,7 +37,13 @@ func main() {
 		v1.Run(arg1, arg2)
 
 	case "v2":
-		// TODO
+		if len(args) != 3 {
+			fmt.Println("Version v2 requires exactly 3 arguments.")
+			fmt.Println("Usage: --version=v2 <Floors int> <Elevators int> <People int>")
+			os.Exit(1)
+		}
+
+		v2.Run(args...)
 
 	default:
 		fmt.Printf("Unsupported version: %s\n", *version)

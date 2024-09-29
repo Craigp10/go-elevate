@@ -10,6 +10,6 @@ This project will be created through 3 versions to incrently solve this problem.
 
 1. The first approach will solve the problem of the elevator, where we can call a program to
    send an elevator to multiple floors and return once the elevator has completed its route
-2. The second approach will solve the problem of managing multiple elevators, where statically elevators and floors are declared. Upon execution the routes are determined and elevators are ran.
+2. The second approach will solve the problem of managing multiple elevators, where static elevators and floors are declared to run the program. Upon execution the routes are determined and elevators are ran asynchronously.
 3. The thrid approach will be building off of the second, implementing a scheduling system to handle dynamic inputs.
 4. Fourth, if it comes to it will be to handle improved concurrency and design patterns to simplify code.
