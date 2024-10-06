@@ -15,6 +15,6 @@ People #
 - Elevator capacity - 5
 - Elevators # - Floors / 4
 - Floor # - 30
-- People # - Elevators Capacity \* Elevator #
+- People # - Elevators Capacity x Elevator #
 
 This problem will build on the elevator interface. Upon execution will validate the inputs, generate the floors for each person, and determine the groups, then send them on their way. Use a simple hash algo.
