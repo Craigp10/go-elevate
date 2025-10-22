@@ -25,14 +25,20 @@ type Inputs struct {
 
 func (e *Elevator) Go(toFloor int) {
 	dist := int(math.Abs(float64(e.Floor - toFloor)))
-	i := 1
-	for i < dist+1 {
-		fmt.Printf("On floor %d\n", i+e.Floor)
+	direction := 1 
+	if e.Floor > toFloor {
+		direction = -1
+	}
+
+	i := 0 
+	for i < dist {
+		chg := i * direction
+		fmt.Printf("On floor %d\n", chg+e.Floor)
 		time.Sleep(1 * time.Second)
 		i++
 	}
 	e.Floor = toFloor
-	fmt.Println("Elevator has Reached floor!")
+	fmt.Printf("Elevator has Reached floor %d!\n", e.Floor)
 }
 
 func Run(args ...interface{}) {
