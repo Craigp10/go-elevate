@@ -8,7 +8,7 @@ import (
 )
 
 type Elevator struct {
-	verbose bool
+	Verbose bool
 	ID      int
 	Floor   int
 }
@@ -35,7 +35,7 @@ func (e *Elevator) Go(toFloor int) {
 	i := 0
 	for i < dist {
 		chg := i * direction
-		if e.verbose {
+		if e.Verbose {
 			fmt.Printf("Elevator %d on floor %d\n", e.ID, chg+e.Floor)
 		}
 		time.Sleep(1 * time.Second)
@@ -44,12 +44,12 @@ func (e *Elevator) Go(toFloor int) {
 	e.Floor = toFloor
 }
 
-func Run(args ...interface{}) {
+func Run(verbose bool, args ...string) {
 	// Assert our arguments as the correct inputs
 	// inputs := args.(Inputs)
-	elevatorFloor, err1 := strconv.Atoi(args[0].(string))
-	toFloor, err2 := strconv.Atoi(args[1].(string))
-	verbose := args[2].(bool)
+	elevatorFloor, err1 := strconv.Atoi(args[0])
+	toFloor, err2 := strconv.Atoi(args[1])
+	// verbose := args[2].(bool)
 	if err1 != nil || err2 != nil {
 		fmt.Println("Invalid inputs, not convertable to int")
 	}
@@ -62,7 +62,7 @@ func Run(args ...interface{}) {
 
 	e := &Elevator{
 		Floor:   inputs.ElevatorFloor,
-		verbose: inputs.Verbose,
+		Verbose: inputs.Verbose,
 	}
 
 	e.Go(inputs.ToFloor)

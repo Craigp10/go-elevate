@@ -24,12 +24,13 @@ type Elevator struct {
 	toFloors []int
 }
 
-func NewElevator(id int) *Elevator {
+func NewElevator(id int, verbose bool) *Elevator {
 	return &Elevator{
 		toFloors: make([]int, 0),
 		Elevator: &v1.Elevator{
-			Floor: 0,
-			ID:    int(id),
+			Floor:   0,
+			ID:      int(id),
+			Verbose: verbose,
 		},
 	}
 }
@@ -50,7 +51,7 @@ func (e *Elevator) Go(wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func Run(args ...string) {
+func Run(verbose bool, args ...string) {
 	Inputs, err := validate(args)
 	if err != nil {
 		log.Fatal(err)
@@ -60,7 +61,7 @@ func Run(args ...string) {
 	elevators := make([]*Elevator, Inputs.Elevators)
 	var i int
 	for range elevators {
-		elevators[i] = NewElevator(i + 1)
+		elevators[i] = NewElevator(i+1, verbose)
 		i++
 	}
 	// Generate people w/ random floors
