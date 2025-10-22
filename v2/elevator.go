@@ -15,16 +15,26 @@ type Input struct {
 	Elevators int
 	Floors    int
 	People    int
+	Verbose   bool
 }
 
-// Extend elevator from v1?
+// Extend elevator from v1
 type Elevator struct {
-	ID int
 	*v1.Elevator
 	toFloors []int
 }
 
-func (e *Elevator) SetToFloors(newFloor ...int) {
+func NewElevator(id int) *Elevator {
+	return &Elevator{
+		toFloors: make([]int, 0),
+		Elevator: &v1.Elevator{
+			Floor: 0,
+			ID:    int(id),
+		},
+	}
+}
+
+func (e *Elevator) ToFloors(newFloor ...int) {
 	e.toFloors = append(e.toFloors, newFloor...)
 }
 
@@ -35,7 +45,7 @@ func (e *Elevator) Go(wg *sync.WaitGroup) {
 
 	for _, floor := range e.toFloors {
 		e.Elevator.Go(floor) // Floor is reset each time... Doesn't count for new floor.
-		fmt.Printf("Elevator %d has reached floor %d\n", e.ID, floor)
+		fmt.Printf("Elevator %d has reached floor %d -- Dropping off people\n", e.ID, floor)
 	}
 	wg.Done()
 }
@@ -50,20 +60,14 @@ func Run(args ...string) {
 	elevators := make([]*Elevator, Inputs.Elevators)
 	var i int
 	for range elevators {
-		elevators[i] = &Elevator{
-			ID:       i + 1,
-			toFloors: make([]int, 0),
-			Elevator: &v1.Elevator{
-				Floor: 0,
-			},
-		}
+		elevators[i] = NewElevator(i + 1)
 		i++
 	}
 	// Generate people w/ random floors
 	floors := make([]int, 0)
 	for range Inputs.People {
 		r := rand.Reader
-		inte, _ := rand.Int(r, big.NewInt(30))
+		inte, _ := rand.Int(r, big.NewInt(int64(Inputs.Floors)))
 		floors = append(floors, int(inte.Int64()))
 	}
 
@@ -87,8 +91,8 @@ func Run(args ...string) {
 	for j, ele := range elevators {
 		wg.Add(1)
 		go func() {
-			ele.SetToFloors(mappedPeople[j]...)
-			fmt.Println("elevator running", ele)
+			ele.ToFloors(mappedPeople[j]...)
+			fmt.Println("elevator running: ", ele.ID)
 			ele.Go(&wg) // Need to now handle a start floor.... Does go allow for forget whats its call... argument raising, changing signature.
 		}()
 	}
@@ -96,19 +100,23 @@ func Run(args ...string) {
 }
 
 func validate(args []string) (*Input, error) {
+	if len(args) != 3 {
+		return nil, fmt.Errorf("invalid # of arguments: %d", len(args))
+	}
+
 	floors, err := strconv.Atoi(args[0])
 	if err != nil || floors > 30 {
-		return nil, fmt.Errorf("invalid floors input '%v'", err)
+		return nil, fmt.Errorf("invalid floors input floors: %d, error: <D-s>'%v'", floors, err)
 	}
 
 	elevators, err := strconv.Atoi(args[1])
 	if err != nil || elevators > int(floors/4) {
-		return nil, fmt.Errorf("invalid elevator input '%v'", err)
+		return nil, fmt.Errorf("invalid elevator input elevators: %d, error: '%v'", elevators, err)
 	}
 
 	people, err := strconv.Atoi(args[2])
 	if err != nil || people > 5*elevators {
-		return nil, fmt.Errorf("invalid people input '%v'", err)
+		return nil, fmt.Errorf("invalid people input people: %d, error: '%v'", people, err)
 	}
 
 	return &Input{
