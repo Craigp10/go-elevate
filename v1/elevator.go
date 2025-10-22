@@ -11,6 +11,13 @@ type Elevator struct {
 	Floor int
 }
 
+func NewElevator(floor int) *Elevator {
+	
+	return &Elevator{
+		Floor: floor,
+	}
+}
+
 type Inputs struct {
 	ElevatorFloor int
 	ToFloor       int
