@@ -1,12 +1,9 @@
-package v2
+package v3
 
 import (
-	"crypto/rand"
 	"fmt"
 	"log"
-	"math/big"
 	"strconv"
-	"time"
 )
 
 type RideRequest struct {
@@ -18,36 +15,42 @@ type Input struct {
 	Elevators int
 	Floors    int
 	People    int
+	Verbose   bool
 }
 
-func Run(args ...string) {
-	Inputs, err := validate(args)
+func Run(verbose bool, args ...string) {
+	// validate inputs
+	inputs, err := validate(args)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	scheduler := NewScheduler(Inputs.Floors, Inputs.Elevators)
+	// Build additonal workers + setup queues
+	rideReqQueue := newChanQueue(inputs.Elevators*inputs.Elevators, RideRequest{})
+	rideFactory := newRideFactory(RideFactoryConfig{
+		tickerTime: 10,
+		queue:      rideReqQueue,
+	})
+
+	for range inputs.People {
+		rideFactory.NewRide()
+	}
+
+	scheduler := NewScheduler(inputs.Floors, inputs.Elevators, inputs.Verbose, rideReqQueue)
+
+	go rideFactory.Serve()
 
 	go scheduler.Run()
 
 	// Generate people w/ random floors
 	floorsReq := make([]RideRequest, 0)
-	for range Inputs.People {
-		r := rand.Reader // Not sure how this is used?
-
-		from, _ := rand.Int(r, big.NewInt(30))
-		to, _ := rand.Int(r, big.NewInt(50))
-
-		floorsReq = append(floorsReq, RideRequest{
-			From: int(from.Int64()),
-			To:   int(to.Int64()),
-		})
-	}
 
 	// Send all floorRequest to the scheduler
 	var i int
 	for i < len(floorsReq) {
-		scheduler.RequestQueue <- floorsReq[i]
+		// scheduler.RequestQueue.mut.Lock()
+		// defer scheduler.RequestQueue.mut.Unlock()
+		scheduler.RequestQueue.queue <- floorsReq[i]
 		i++
 	}
 
@@ -56,13 +59,13 @@ func Run(args ...string) {
 
 	// Build sorted order -- prioritize same from, direction
 	// Build buckets
-	for {
-		r := rand.Reader // Not sure how this is used?
+	// for {
+	// 	r := rand.Reader // Not sure how this is used?
 
-		waitTime, _ := rand.Int(r, big.NewInt(10))
-		generateNewRequest(scheduler)
-		time.Sleep(time.Duration(waitTime.Int64()))
-	}
+	// 	waitTime, _ := rand.Int(r, big.NewInt(10))
+	// 	generateNewRequest(scheduler)
+	// 	time.Sleep(time.Duration(waitTime.Int64()))
+	// }
 }
 
 func validate(args []string) (*Input, error) {
@@ -86,15 +89,4 @@ func validate(args []string) (*Input, error) {
 		Floors:    floors,
 		People:    people,
 	}, nil
-}
-
-func generateNewRequest(s Scheduler) {
-	r := rand.Reader // Not sure how this is used?
-	from, _ := rand.Int(r, big.NewInt(30))
-	to, _ := rand.Int(r, big.NewInt(50))
-	req := RideRequest{
-		From: int(from.Int64()),
-		To:   int(to.Int64()),
-	}
-	s.RequestQueue <- req
 }
