@@ -21,12 +21,12 @@ type Input struct {
 // Extend elevator from v1
 type Elevator struct {
 	*v1.Elevator
-	toFloors []int
+	route []int
 }
 
 func NewElevator(id int, verbose bool) *Elevator {
 	return &Elevator{
-		toFloors: make([]int, 0),
+		route: make([]int, 0),
 		Elevator: &v1.Elevator{
 			Floor:   0,
 			ID:      int(id),
@@ -35,16 +35,20 @@ func NewElevator(id int, verbose bool) *Elevator {
 	}
 }
 
-func (e *Elevator) ToFloors(newFloor ...int) {
-	e.toFloors = append(e.toFloors, newFloor...)
+func (e *Elevator) SetRoute(newFloor ...int) {
+	e.route = append(e.route, newFloor...)
+}
+
+func (e *Elevator) Route() []int {
+	return e.route
 }
 
 func (e *Elevator) Go(wg *sync.WaitGroup) {
-	slices.SortFunc(e.toFloors, func(a, b int) int {
+	slices.SortFunc(e.route, func(a, b int) int {
 		return a - b
 	})
 
-	for _, floor := range e.toFloors {
+	for _, floor := range e.Route() {
 		e.Elevator.Go(floor) // Floor is reset each time... Doesn't count for new floor.
 		fmt.Printf("Elevator %d has reached floor %d -- Dropping off people\n", e.ID, floor)
 	}
@@ -92,7 +96,7 @@ func Run(verbose bool, args ...string) {
 	for j, ele := range elevators {
 		wg.Add(1)
 		go func() {
-			ele.ToFloors(mappedPeople[j]...)
+			ele.SetRoute(mappedPeople[j]...)
 			fmt.Println("elevator running: ", ele.ID)
 			ele.Go(&wg) // Need to now handle a start floor.... Does go allow for forget whats its call... argument raising, changing signature.
 		}()

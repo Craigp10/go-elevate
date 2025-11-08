@@ -1,6 +1,7 @@
 package v3
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -19,53 +20,37 @@ type Input struct {
 }
 
 func Run(verbose bool, args ...string) {
+	ctx := context.Background()
+
 	// validate inputs
 	inputs, err := validate(args)
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	fmt.Printf("validated inputs: %+v\n", inputs)
 	// Build additonal workers + setup queues
-	rideReqQueue := newChanQueue(inputs.Elevators*inputs.Elevators, RideRequest{})
+	rideReqQueue := newChanQueue(inputs.People*inputs.People, RideRequest{})
 	rideFactory := newRideFactory(RideFactoryConfig{
 		tickerTime: 10,
 		queue:      rideReqQueue,
+		verbose:    verbose,
 	})
 
-	for range inputs.People {
+	fmt.Println("created queues")
+
+	for i := 0; i < inputs.People; i++ {
+		// blocking to queue up rides
 		rideFactory.NewRide()
 	}
 
+	fmt.Println("created rides: ", rideReqQueue.Length())
 	scheduler := NewScheduler(inputs.Floors, inputs.Elevators, inputs.Verbose, rideReqQueue)
 
-	go rideFactory.Serve()
+	go rideFactory.Serve(ctx)
 
-	go scheduler.Run()
+	scheduler.Run()
 
-	// Generate people w/ random floors
-	floorsReq := make([]RideRequest, 0)
-
-	// Send all floorRequest to the scheduler
-	var i int
-	for i < len(floorsReq) {
-		// scheduler.RequestQueue.mut.Lock()
-		// defer scheduler.RequestQueue.mut.Unlock()
-		scheduler.RequestQueue.queue <- floorsReq[i]
-		i++
-	}
-
-	// Below is done in scheduler
-	// Remove any dups
-
-	// Build sorted order -- prioritize same from, direction
-	// Build buckets
-	// for {
-	// 	r := rand.Reader // Not sure how this is used?
-
-	// 	waitTime, _ := rand.Int(r, big.NewInt(10))
-	// 	generateNewRequest(scheduler)
-	// 	time.Sleep(time.Duration(waitTime.Int64()))
-	// }
+	close(rideFactory.queue.queue)
 }
 
 func validate(args []string) (*Input, error) {

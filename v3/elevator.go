@@ -2,7 +2,6 @@ package v3
 
 import (
 	"fmt"
-	v1 "go-elevate/v1"
 	v2 "go-elevate/v2"
 	"math"
 	"time"
@@ -29,19 +28,8 @@ func newElevator(verbose bool, id int, idleChan *ChanQueue[int]) *Elevator {
 	return &Elevator{
 		idleElevators: idleChan,
 		State:         STATE_IDLE,
-		Elevator: &v2.Elevator{
-			Route: make([]int, 0),
-			Elevator: &v1.Elevator{
-				ID:      1,
-				Verbose: verbose,
-				Floor:   0,
-			},
-		},
+		Elevator:      v2.NewElevator(id, verbose),
 	}
-}
-
-func (e *Elevator) SetRoute(route []int) {
-	e.Elevator.Route = route
 }
 
 // func (e *Elevator) Move(floor int) {
@@ -58,7 +46,7 @@ func (e *Elevator) SetRoute(route []int) {
 // It can no longer pick up work.
 func (e *Elevator) Go() {
 	e.State = STATE_ACTIVE
-	for _, v := range e.Route {
+	for _, v := range e.Route() {
 		dist := time.Duration(math.Abs(float64(v - e.Floor)))
 		time.Sleep(1 * dist * time.Second)
 		fmt.Printf("Elevator %d reached floor %d\n", e.ID, v)

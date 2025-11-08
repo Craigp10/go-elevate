@@ -30,18 +30,19 @@ func newChanQueue[T RideRequest | RideQueue | int](size int, queue T) *ChanQueue
 	}
 }
 
+func (cq *ChanQueue[T]) Length() int {
+	return len(cq.queue)
+}
+
 // If we want to extend a scheduler to handle multiple floors, consider mutex's around these queues
 type Scheduler struct {
-	RequestQueue      *ChanQueue[RideRequest] // schQueue on CommandQueue
-	ElevatorsRegistry map[int]*Elevator
-	Floors            int
-	// ActiveQueue        chan RideQueue
+	RequestQueue       *ChanQueue[RideRequest] // schQueue on CommandQueue
+	ElevatorsRegistry  map[int]*Elevator
+	Floors             int
 	AvailableElevators *ChanQueue[int] // elevator id
 	ActiveElevators    *ChanQueue[int] // size 1
-	IdleElevator       *Elevator
-	idleChan           *ChanQueue[int]
-	upRides            RideArray // limit 6 stops
-	downRides          RideArray // limit 6 stops
+	upRides            RideArray       // limit 6 stops
+	downRides          RideArray       // limit 6 stops
 	upQueue            *ChanQueue[RideQueue]
 	downQueue          *ChanQueue[RideQueue]
 }
@@ -102,7 +103,7 @@ func (s *Scheduler) Run() {
 	for {
 		select {
 		case req := <-s.RequestQueue.queue:
-			fmt.Println("New ride request")
+			fmt.Println("New ride request", req)
 			// Any additional work that we want for a new 'request' coming in...
 
 			ride := RideQueue{
@@ -111,13 +112,13 @@ func (s *Scheduler) Run() {
 			}
 
 			if ride.Direction > 0 {
-				s.downQueue.mut.Lock()
-				defer s.downQueue.mut.Unlock()
+				s.upQueue.mut.Lock()
 				s.upQueue.queue <- ride
+				s.upQueue.mut.Unlock()
 			} else {
 				s.downQueue.mut.Lock()
-				defer s.downQueue.mut.Unlock()
 				s.downQueue.queue <- ride
+				s.downQueue.mut.Unlock()
 			}
 
 		case downRide := <-s.downQueue.queue:
@@ -160,59 +161,22 @@ func (s *Scheduler) Run() {
 			}
 
 			s.upRides.items = append(s.upRides.items, upRide)
-		// case req := <-s.ActiveQueue:
-		// 	// New request passed in
-
-		// 	if arr.Contains(req.RideRequest) {
-		// 		return
-		// 	}
-
-		// 	arr.items = append(arr.items, req)
-
-		// Come back to this... This handles idle elevators.. probably b/c there was no ride.
-		// for _, ele := range s.ElevatorsRegister {
-		// 	if ele.State == STATE_ACTIVE {
-		// 		continue
-		// 	} else if ele.State == STATE_IDLE {
-		// 		ele.Move(req.From)
-		// 	} else {
-
-		// 	}
-
-		// Attempts to put ride on active elevator... this is broken come back too
-		// case activeElevator := <-s.ActiveElevators: // Busy elevators 'check in'
-		// 	if arr.Length() == 0 {
-		// 		fmt.Println("Available Elevator -- No active request")
-		// 		// Somehow need to wait here until we get in a request
-		// 		// s.IdleElevator = freeElevator
-		// 		continue
-		// 	}
-
-		// 	// fmt.Println("Available Elevator", availableElevator, s.AvailableElevators)
-		// 	cur := s.ElevatorsRegister[activeElevator]
-
-		// 	// cur.State =
-		// 	// cur.Route = []int{first.From, first.To}
-
-		// 	for len(cur.Route) <= 4 {
-		// 		next := <-s.ActiveQueue
-		// 		if next.Direction != cur.State {
-		// 			s.ActiveQueue <- next
-		// 		}
-		// 		cur.Route = append(cur.Route, next.From, next.To)
-		// 	}
-
-		// 	// Will need to flatten the route
-		// 	go cur.Go()
 		case availableElevator := <-s.AvailableElevators.queue:
 			// take bigger direction queue
 			route := s.nextElevatorRoute()
 
 			elevator := s.ElevatorsRegistry[availableElevator]
-			elevator.SetRoute(route)
+			elevator.SetRoute(route...)
 			go elevator.Go()
 		}
 	}
+}
+
+func (s *Scheduler) Close() {
+	close(s.downQueue.queue)
+	close(s.upQueue.queue)
+	close(s.ActiveElevators.queue)
+	close(s.AvailableElevators.queue)
 }
 
 func (s *Scheduler) nextElevatorRoute() []int {
@@ -228,11 +192,11 @@ func NewScheduler(floors int, elevatorCount int, verbose bool, rideRequestQueue 
 	var a int
 	idleElevatorsChan := newChanQueue(elevatorCount, a)
 
-	for i := range elevators {
+	for i := range elevatorCount {
 		elevators[i+1] = newElevator(verbose, i, idleElevatorsChan)
 		i++
 	}
-
+	fmt.Println(elevators)
 	return Scheduler{
 		RequestQueue:       newChanQueue(elevatorCount*elevatorCount, RideRequest{}),
 		upRides:            newRideArray(),
