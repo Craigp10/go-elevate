@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 )
 
 type RideRequest struct {
@@ -29,7 +30,7 @@ func Run(verbose bool, args ...string) {
 	}
 	fmt.Printf("validated inputs: %+v\n", inputs)
 	// Build additonal workers + setup queues
-	rideReqQueue := newChanQueue(inputs.People*inputs.People, RideRequest{})
+	rideReqQueue := make(chan RideRequest, inputs.People*inputs.People)
 	rideFactory := newRideFactory(RideFactoryConfig{
 		tickerTime: 10,
 		queue:      rideReqQueue,
@@ -40,17 +41,23 @@ func Run(verbose bool, args ...string) {
 
 	for i := 0; i < inputs.People; i++ {
 		// blocking to queue up rides
-		rideFactory.NewRide()
+		rideFactory.NewRide(int64(inputs.Floors))
 	}
 
-	fmt.Println("created rides: ", rideReqQueue.Length())
+	fmt.Println("created rides: ", len(rideReqQueue))
 	scheduler := NewScheduler(inputs.Floors, inputs.Elevators, inputs.Verbose, rideReqQueue)
+	go scheduler.Run(inputs.Elevators)
+	go rideFactory.Serve(ctx, int64(inputs.Floors))
 
-	go rideFactory.Serve(ctx)
+	time.Sleep(2 * time.Second)
+	// TODO -- add closer listener instead of loop
+	for {
+		time.Sleep(2 * time.Second)
+		fmt.Printf("available elevators %d\n", len(scheduler.AvailableElevators))
+	}
+	scheduler.Close()
 
-	scheduler.Run()
-
-	close(rideFactory.queue.queue)
+	close(rideFactory.queue)
 }
 
 func validate(args []string) (*Input, error) {

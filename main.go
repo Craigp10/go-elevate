@@ -23,7 +23,7 @@ func main() {
 	verbose := flag.Bool("verbose", false, "Specify the logging verbostiy")
 	flag.Parse()
 	args := flag.Args()
-
+	fmt.Println("Args:", args)
 	switch *version {
 	case "v1":
 		if len(args) != 2 {

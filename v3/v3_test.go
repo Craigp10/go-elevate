@@ -10,7 +10,7 @@ import (
 
 func Test_Scheduler_Constructor(t *testing.T) {
 
-	rideRequestChan := newChanQueue(10, RideRequest{})
+	rideRequestChan := make(chan RideRequest, 10)
 	sch := NewScheduler(10, 2, true, rideRequestChan)
 	require.NotNil(t, sch)
 
@@ -27,7 +27,7 @@ func Test_Scheduler_Constructor(t *testing.T) {
 
 func Test_rideFactory(t *testing.T) {
 	ctx := context.Background()
-	rideQueue := newChanQueue(100, RideRequest{})
+	rideQueue := make(chan RideRequest, 100)
 	cfg := RideFactoryConfig{
 		tickerTime: 5,
 		queue:      rideQueue,
@@ -36,9 +36,13 @@ func Test_rideFactory(t *testing.T) {
 
 	require.NotNil(t, newFactory)
 
-	newFactory.NewRide()
-	go newFactory.Serve(ctx)
+	newFactory.NewRide(10)
+	go newFactory.Serve(ctx, 10)
 	time.Sleep(6 * time.Second)
 
-	require.Equal(t, 2, rideQueue.Length())
+	require.Equal(t, 2, len(rideQueue))
+}
+
+func Test_SchedulerRun(t *testing.T) {
+
 }

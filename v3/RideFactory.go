@@ -11,13 +11,13 @@ import (
 type RideFactoryConfig struct {
 	verbose    bool
 	tickerTime int
-	queue      *ChanQueue[RideRequest]
+	queue      chan RideRequest
 }
 
 type RideFactory struct {
 	verbose    bool
 	tickerTime int
-	queue      *ChanQueue[RideRequest]
+	queue      chan RideRequest
 	cancel     context.CancelFunc
 }
 
@@ -29,7 +29,7 @@ func newRideFactory(cfg RideFactoryConfig) RideFactory {
 	}
 }
 
-func (rf *RideFactory) Serve(ctx context.Context) {
+func (rf *RideFactory) Serve(ctx context.Context, floorCount int64) {
 	ctx, cancel := context.WithCancel(ctx)
 	rf.cancel = cancel
 
@@ -42,7 +42,7 @@ func (rf *RideFactory) Serve(ctx context.Context) {
 			fmt.Println("RideFactory shutting down gracefully...")
 			return
 		case <-ticker.C:
-			rf.NewRide()
+			rf.NewRide(floorCount)
 		}
 	}
 }
@@ -56,19 +56,23 @@ func (rf *RideFactory) Close() {
 	fmt.Println("Nothing to close...")
 }
 
-func (rf *RideFactory) NewRide() {
-	if rf.verbose {
-		fmt.Println("new ride")
-	}
+func (rf *RideFactory) NewRide(floorCount int64) {
 
 	r := rand.Reader // Not sure how this is used?
-	from, _ := rand.Int(r, big.NewInt(30))
-	to, _ := rand.Int(r, big.NewInt(50))
+	// from, to := big.NewInt(1), big.NewInt(1)
+	// for from.Cmp(to) != 0 {
+	from, _ := rand.Int(r, big.NewInt(floorCount))
+	to, _ := rand.Int(r, big.NewInt(floorCount))
+	// }
+
 	ride := RideRequest{
 		From: int(from.Int64()),
 		To:   int(to.Int64()),
 	}
-	rf.queue.mut.Lock()
-	defer rf.queue.mut.Unlock()
-	rf.queue.queue <- ride
+
+	if rf.verbose {
+		fmt.Printf("new ride -- From: %d, To: %d", ride.From, ride.To)
+	}
+
+	rf.queue <- ride
 }

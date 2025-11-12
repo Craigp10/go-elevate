@@ -19,42 +19,34 @@ var (
 // Besides moving to floors, and reporting back when finished.
 type Elevator struct {
 	*v2.Elevator
-	idleElevators *ChanQueue[int] // Pass in ID, used for scheduler to assign work
+	idleElevators chan string // Pass in ID, used for scheduler to assign work
 	// Direction           int        // -1 - down, 0 Idle, 1 up
 	State State
+	ID    string
 }
 
-func newElevator(verbose bool, id int, idleChan *ChanQueue[int]) *Elevator {
+func newElevator(verbose bool, id string, idleChan chan string) *Elevator {
 	return &Elevator{
 		idleElevators: idleChan,
 		State:         STATE_IDLE,
-		Elevator:      v2.NewElevator(id, verbose),
+		Elevator:      v2.NewElevator(0, verbose),
+		ID:            id,
 	}
 }
-
-// func (e *Elevator) Move(floor int) {
-// Unused function -- to be used when elevators can pick up routes as moving... idea move to begin of pickup w/o changing state for scheduler checking
-// 	dist := time.Duration(math.Abs(float64(floor - e.Floor)))
-// 	time.Sleep(1 * dist * time.Second)
-// 	fmt.Printf("Elevator %d reached floor %d\n", e.ID, floor)
-
-// 	e.State = STATE_ACTIVE
-// 	e.Go()
-// }
 
 // Go sends an eleavator on it's 'route', changing state to active and runng through all floors it is assigned.
 // It can no longer pick up work.
 func (e *Elevator) Go() {
+	fmt.Println("elevator going", e.Route())
 	e.State = STATE_ACTIVE
 	for _, v := range e.Route() {
 		dist := time.Duration(math.Abs(float64(v - e.Floor)))
-		time.Sleep(1 * dist * time.Second)
-		fmt.Printf("Elevator %d reached floor %d\n", e.ID, v)
+		time.Sleep(2 * dist * time.Second)
+		fmt.Printf("Elevator %s reached floor %d\n", e.ID, v)
 		e.Floor = v
 	}
 
 	e.State = STATE_IDLE
 
-	e.idleElevators.mut.Lock()
-	// e.idleElevators <- e.ID
+	e.idleElevators <- e.ID
 }
