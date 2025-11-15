@@ -35,3 +35,10 @@ Thinking through this, we'll need to take advantage of Gos concurrency model to 
 idea in my head
 
 Scheduler listens to channel for 'free elevators'. When an elevator becomes free it takes routes up to 3, in a single direction from where it is at atm. When an elevator 'frees' up it will provides it's id through the channel, used on the map for the scheduler to move it. The scheduler will also be listenign to another channel where users can request floors, from-to. (this is where it gets complicated and I may need help here. Deciding how to schedule these in terms of direction is difficult... maybe just put next three on soonest elevator for now.)
+
+
+Completed -- State of program
+Currently the program works as intended, but missing some features to consider...
+1. A direction is blocked until it reaches atleast 5 stops so an elevator can begin for it.
+2. The program doesn't properly shutdown ad doesn't run continously atm, needs listener for closer to properly shut down.<D-s>
+3. Improve logging and design for channels.

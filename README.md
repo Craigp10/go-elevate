@@ -16,5 +16,3 @@ This project will be created through 3 versions to incrently solve this problem.
    and floors are declared to run the program. Upon execution the routes are determined and elevators are ran asynchronously.
 
 3. The third approach will be building off of the second, implementing a scheduling system to handle dynamic inputs.
-
-4. Fourth, if it comes to it will be to handle improved concurrency and design patterns to simplify code.
